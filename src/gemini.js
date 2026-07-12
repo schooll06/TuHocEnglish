@@ -6,10 +6,10 @@ const DEFAULT_MODEL = 'gemini-3.5-flash';
 const DEFAULT_KEY = '';
 
 /**
- * Get the API Key from localStorage
+ * Get the API Key from localStorage or environment
  */
 export function getApiKey() {
-  return localStorage.getItem('vibe_english_gemini_key') || DEFAULT_KEY;
+  return localStorage.getItem('vibe_english_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_KEY;
 }
 
 /**
