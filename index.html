@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VibeEnglish AI - Trợ lý Học Tiếng Anh Thông Minh</title>
+    <meta name="description" content="Trang web cá nhân học tiếng anh kết hợp công nghệ AI Gemini để dịch nghĩa, đọc phát âm và trò chuyện cùng gia sư ảo." />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>" />
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Navbar Component -->
+      <nav class="navbar" aria-label="Menu điều hướng chính">
+        <div class="nav-brand">
+          <div class="nav-brand-logo">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <span class="nav-brand-text">VibeEnglish AI</span>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="#vocabulary" class="nav-link active" id="tab-vocab">
+              <i class="fa-solid fa-book-open"></i>
+              <span>Từ vựng</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#flashcards" class="nav-link" id="tab-flashcards">
+              <i class="fa-solid fa-clone"></i>
+              <span>Thẻ ghi nhớ</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#chat" class="nav-link" id="tab-chat">
+              <i class="fa-solid fa-comments"></i>
+              <span>Gia sư AI</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#settings" class="nav-link" id="tab-settings">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Cài đặt</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Main Content Container -->
+      <main class="main-content">
+        
+        <!-- SECTION 1: VOCABULARY VIEW -->
+        <section id="vocabulary-view" class="view-section">
+          <header class="page-header">
+            <h1 class="page-title">Sổ Tay Từ Vựng</h1>
+            <p class="page-subtitle">Quản lý từ vựng và tự động dịch nghĩa với trí tuệ nhân tạo Gemini</p>
+          </header>
+
+          <!-- Stats Dashboard -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon total">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value" id="stats-total">0</span>
+                <span class="stat-label">Tổng số từ</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon learning">
+                <i class="fa-solid fa-book-reader"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value" id="stats-learning">0</span>
+                <span class="stat-label">Đang học</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon mastered">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value" id="stats-mastered">0</span>
+                <span class="stat-label">Đã thuộc</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon mastery-rate">
+                <i class="fa-solid fa-gauge-high"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value" id="stats-rate">0%</span>
+                <span class="stat-label font-body">Tỷ lệ thuộc</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert warning if API key is not configured -->
+          <div class="help-card" id="api-warning-banner" style="display: none;">
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> Chưa cấu hình Gemini API Key</h4>
+            <p>Hiện tại bạn đang chạy ở chế độ Offline. Hãy cấu hình API Key trong mục <strong>Cài đặt</strong> để mở khoá tính năng tự dịch nghĩa bằng AI, giải thích IPA, tạo ví dụ và học cùng Gia sư AI Aura.</p>
+          </div>
+
+          <!-- Quick Add AI Bar -->
+          <div class="glass-panel" style="padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; background: rgba(139, 92, 246, 0.05); border-color: rgba(139, 92, 246, 0.25);">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--color-secondary); font-weight: 600; font-size: 14px;">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--color-primary); text-shadow: 0 0 8px var(--color-primary);"></i>
+              <span>Thêm nhanh bằng AI (Anh hoặc Việt):</span>
+            </div>
+            <div style="position: relative; display: flex; gap: 10px; flex-wrap: wrap; width: 100%;">
+              <input type="text" id="quick-add-input" class="form-input" style="flex: 1; min-width: 200px; height: 44px; padding-right: 40px;" placeholder="Nhập từ tiếng Anh hoặc tiếng Việt rồi nhấn Enter... (Ví dụ: success, thất bại)" />
+              <button class="btn btn-primary" id="btn-quick-add" style="height: 44px; padding: 0 20px; font-size: 13px;">
+                <i class="fa-solid fa-bolt"></i> Thêm nhanh
+              </button>
+              <div id="quick-add-loading" style="position: absolute; right: 140px; top: 13px; display: none;">
+                <div class="spinner" style="width: 18px; height: 18px; border-top-color: var(--color-secondary);"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search and Actions Bar -->
+          <div class="search-add-bar">
+            <div class="search-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="vocab-search" class="search-input" placeholder="Tìm kiếm từ vựng hoặc nghĩa tiếng Việt..." />
+            </div>
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all">Tất cả</button>
+              <button class="filter-tab" data-filter="learning">Đang học</button>
+              <button class="filter-tab" data-filter="mastered">Đã thuộc</button>
+            </div>
+            <button class="btn btn-primary" id="btn-open-add-modal">
+              <i class="fa-solid fa-plus"></i> Thêm từ mới
+            </button>
+          </div>
+
+          <!-- Vocabulary List Grid -->
+          <div class="vocab-grid" id="vocab-list">
+            <!-- Dynamic elements will be inserted here -->
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="vocab-empty" style="display: none;">
+            <div class="empty-icon">
+              <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 class="empty-text">Không tìm thấy từ vựng nào</h3>
+            <p class="empty-subtext">Bạn chưa thêm từ vựng nào hoặc không tìm thấy từ khóa tương ứng.</p>
+            <button class="btn btn-primary btn-sm" id="btn-empty-add">Thêm từ đầu tiên</button>
+          </div>
+        </section>
+
+        <!-- SECTION 2: FLASHCARDS VIEW -->
+        <section id="flashcards-view" class="view-section" style="display: none;">
+          <header class="page-header">
+            <h1 class="page-title">Học Qua Flashcards</h1>
+            <p class="page-subtitle">Ghi nhớ từ vựng hiệu quả hơn bằng thẻ thông minh 3D</p>
+          </header>
+
+          <div class="flashcards-container">
+            <div class="card-progress-bar">
+              <div class="card-progress-fill" id="card-progress-fill"></div>
+            </div>
+
+            <!-- 3D Flip Card -->
+            <div class="card-scene" id="flashcard">
+              <div class="flashcard-inner">
+                <!-- Front Side -->
+                <div class="flashcard-front">
+                  <div class="card-badges">
+                    <span class="badge badge-type" id="fc-type">Noun</span>
+                  </div>
+                  <h2 class="flashcard-word" id="fc-word">Resilience</h2>
+                  <span class="flashcard-ipa" id="fc-ipa">/rɪˈzɪl.jəns/</span>
+                  <button class="btn-card-action audio-btn" id="fc-speak" style="margin-top: 10px; width: 44px; height: 44px; font-size: 16px;" title="Nghe phát âm">
+                    <i class="fa-solid fa-volume-high"></i>
+                  </button>
+                </div>
+                <!-- Back Side -->
+                <div class="flashcard-back">
+                  <span class="badge badge-type" id="fc-back-type">Noun</span>
+                  <h3 class="flashcard-meaning" id="fc-meaning">Sự kiên cường, khả năng phục hồi</h3>
+                  <p class="flashcard-definition" id="fc-definition">The capacity to recover quickly from difficulties; toughness.</p>
+                  
+                  <div class="card-example" style="width: 100%; margin-top: 10px; text-align: left;">
+                    <span class="example-en" id="fc-example-en">Her resilience in the face of failure was inspiring.</span>
+                    <span class="example-vi" id="fc-example-vi">Sự kiên cường của cô ấy khi đối mặt với thất bại đã truyền cảm hứng.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flashcard-controls">
+              <button class="btn btn-secondary" id="btn-fc-prev" title="Trở lại">
+                <i class="fa-solid fa-arrow-left"></i>
+              </button>
+              <button class="btn btn-accent" id="btn-fc-keep" title="Đang học">
+                <i class="fa-solid fa-triangle-exclamation"></i> Luyện tập tiếp
+              </button>
+              <button class="btn btn-success" id="btn-fc-master" title="Đã thuộc">
+                <i class="fa-solid fa-circle-check"></i> Đã thuộc từ này
+              </button>
+              <button class="btn btn-secondary" id="btn-fc-next" title="Tiếp theo">
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty state for Flashcards -->
+          <div class="empty-state" id="fc-empty" style="display: none;">
+            <div class="empty-icon">
+              <i class="fa-solid fa-clone"></i>
+            </div>
+            <h3 class="empty-text font-header">Không có thẻ học</h3>
+            <p class="empty-subtext">Danh sách trống hoặc bạn đã thuộc hết các từ vựng này. Hãy thêm từ vựng mới hoặc đặt lại trạng thái học để luyện tập.</p>
+          </div>
+        </section>
+
+        <!-- SECTION 3: CHAT VIEW -->
+        <section id="chat-view" class="view-section" style="display: none;">
+          <header class="page-header">
+            <h1 class="page-title">Gia Sư Tiếng Anh AI</h1>
+            <p class="page-subtitle">Luyện nói, viết và hỏi đáp ngữ pháp cùng Aura - Trợ lý AI thân thiện</p>
+          </header>
+
+          <div class="chat-container">
+            <div class="chat-header">
+              <div class="tutor-profile">
+                <div class="tutor-avatar">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="tutor-info">
+                  <span class="tutor-name">Aura AI Tutor</span>
+                  <span class="tutor-status" id="chat-status-text">Đang hoạt động</span>
+                </div>
+              </div>
+              <div>
+                <button class="btn btn-secondary btn-icon" id="btn-clear-chat" title="Xóa lịch sử trò chuyện">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Message Area -->
+            <div class="chat-messages" id="chat-messages">
+              <!-- Welcome message -->
+              <div class="message-wrapper ai">
+                <div class="message-bubble">
+                  Hello! I'm <strong>Aura</strong>, your personal AI English tutor. How can I help you today? We can practice speaking, translate text, write essays, or explain complex English grammar. 
+                  <br><br>
+                  <em>Chào bạn! Mình là Aura, gia sư tiếng Anh của bạn. Hôm nay bạn muốn luyện tập điều gì? Bạn cứ thoải mái trò chuyện bằng tiếng Anh hoặc hỏi đáp ngữ pháp nhé!</em>
+                </div>
+                <div class="message-meta">
+                  <button class="speech-btn-chat" data-text="Hello! I'm Aura, your personal AI English tutor. How can I help you today?"><i class="fa-solid fa-volume-high"></i> Đọc câu này</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="chat-input-bar">
+              <textarea id="chat-input" class="chat-textarea" placeholder="Nhập câu tiếng Anh hoặc câu hỏi của bạn... (Ctrl + Enter để gửi)"></textarea>
+              <button class="btn btn-primary" id="btn-send-chat" style="height: 48px;" title="Gửi tin nhắn">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: SETTINGS VIEW -->
+        <section id="settings-view" class="view-section" style="display: none;">
+          <header class="page-header">
+            <h1 class="page-title">Cấu Hình & Cài Đặt</h1>
+            <p class="page-subtitle font-body">Thiết lập kết nối Gemini API và các tuỳ chọn giọng đọc</p>
+          </header>
+
+          <div class="glass-panel">
+            <div class="settings-section">
+              
+              <!-- Gemini API Key configuration -->
+              <div class="settings-row">
+                <div class="settings-info">
+                  <h3 class="settings-title">Google Gemini API Key</h3>
+                  <p class="settings-desc">Bắt buộc để dịch nghĩa tự động, phân tích từ vựng và chat với Gia sư AI. API key được lưu trực tiếp trên thiết bị của bạn.</p>
+                </div>
+                <div class="settings-control">
+                  <input type="password" id="setting-api-key" class="form-input" style="width: 100%; margin-bottom: 8px;" placeholder="Nhập API Key AI của bạn..." />
+                  <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
+                    <span id="api-status-indicator" class="api-badge inactive"><i class="fa-solid fa-circle"></i> Chưa cấu hình</span>
+                    <button class="btn btn-secondary btn-sm" id="btn-save-api" style="height: 36px; padding: 0 12px; font-size: 12px;">Lưu & Test</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gemini Model Selection -->
+              <div class="settings-row">
+                <div class="settings-info">
+                  <h3 class="settings-title">Lựa chọn Mô hình AI</h3>
+                  <p class="settings-desc">Chọn phiên bản Gemini được sử dụng cho các tác vụ.</p>
+                </div>
+                <div class="settings-control">
+                  <select id="setting-gemini-model" class="form-input" style="width: 100%;">
+                    <option value="gemini-3.5-flash">Gemini 3.5 Flash (Mặc định - Nhanh & Mới nhất)</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash (Tốc độ cao)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Text-To-Speech (TTS) configuration -->
+              <div class="settings-row">
+                <div class="settings-info">
+                  <h3 class="settings-title">Giọng đọc phát âm (Text to Speech)</h3>
+                  <p class="settings-desc">Tùy chỉnh tốc độ và âm lượng khi đọc từ vựng tiếng Anh.</p>
+                </div>
+                <div class="settings-control" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div class="range-container">
+                    <label class="form-label" style="width: 60px;">Tốc độ:</label>
+                    <input type="range" id="setting-tts-rate" min="0.5" max="2" step="0.1" value="0.9" class="range-input" />
+                    <span class="range-value" id="tts-rate-val">0.9x</span>
+                  </div>
+                  <div class="range-container">
+                    <label class="form-label" style="width: 60px;">Âm lượng:</label>
+                    <input type="range" id="setting-tts-volume" min="0.1" max="1" step="0.1" value="0.9" class="range-input" />
+                    <span class="range-value" id="tts-volume-val">0.9</span>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary btn-sm" id="btn-test-tts" style="flex: 1; height: 36px; font-size: 12px;">
+                      <i class="fa-solid fa-volume-high"></i> Đọc thử
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Database Import/Export -->
+              <div class="settings-row">
+                <div class="settings-info">
+                  <h3 class="settings-title">Dữ liệu từ vựng</h3>
+                  <p class="settings-desc">Sao lưu dữ liệu cá nhân của bạn hoặc nhập dữ liệu từ thiết bị khác để không bị mất.</p>
+                </div>
+                <div class="settings-control" style="display: flex; gap: 10px;">
+                  <button class="btn btn-secondary" id="btn-export" style="flex: 1; height: 44px; font-size: 13px;">
+                    <i class="fa-solid fa-download"></i> Xuất JSON
+                  </button>
+                  <button class="btn btn-secondary" id="btn-import-trigger" style="flex: 1; height: 44px; font-size: 13px;">
+                    <i class="fa-solid fa-upload"></i> Nhập JSON
+                  </button>
+                  <input type="file" id="file-import" accept=".json" style="display: none;" />
+                </div>
+              </div>
+
+              <!-- Reset database -->
+              <div class="settings-row" style="border-bottom: none;">
+                <div class="settings-info">
+                  <h3 class="settings-title" style="color: var(--color-accent);">Khôi phục gốc</h3>
+                  <p class="settings-desc">Xóa toàn bộ từ vựng và khôi phục lại dữ liệu mẫu ban đầu. Hành động này không thể hoàn tác.</p>
+                </div>
+                <div class="settings-control">
+                  <button class="btn btn-accent" id="btn-reset-db" style="width: 100%; height: 44px; font-size: 13px;">
+                    <i class="fa-solid fa-rotate-left"></i> Xóa & Khôi Phục Mẫu
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- ADD / EDIT VOCABULARY MODAL -->
+      <div class="modal-overlay" id="vocab-modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" id="vocab-modal-title">Thêm Từ Vựng Mới</h2>
+            <button class="btn-close-modal" id="btn-close-vocab-modal">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Word input with AI autofill button -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-word">Từ tiếng Anh hoặc Tiếng Việt *</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="vocab-input-word" class="form-input" style="flex: 1;" placeholder="Nhập từ cần thêm (Ví dụ: accomplish, kiên cường...)" required />
+                <button class="btn btn-primary" id="btn-ai-translate" style="height: 48px; padding: 0 16px;" title="Dịch nghĩa bằng AI Gemini">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> AI Dịch
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading indicator during AI translation -->
+            <div id="ai-loading" style="display: none; align-items: center; gap: 10px; padding: 10px; background: rgba(6, 182, 212, 0.1); border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
+              <div class="spinner" style="width: 18px; height: 18px; border-top-color: var(--color-secondary);"></div>
+              <span style="font-size: 12px; color: var(--color-secondary); font-weight: 500;">Gemini AI đang phân tích từ vựng...</span>
+            </div>
+
+            <!-- IPA & Word Type -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label" for="vocab-input-ipa">Phiên âm (IPA)</label>
+                <input type="text" id="vocab-input-ipa" class="form-input" placeholder="Ví dụ: /əˈkʌm.plɪʃ/" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="vocab-input-type">Loại từ</label>
+                <select id="vocab-input-type" class="form-input">
+                  <option value="Noun">Danh từ (Noun)</option>
+                  <option value="Verb">Động từ (Verb)</option>
+                  <option value="Adjective">Tính từ (Adjective)</option>
+                  <option value="Adverb">Trạng từ (Adverb)</option>
+                  <option value="Preposition">Giới từ (Preposition)</option>
+                  <option value="Conjunction">Liên từ (Conjunction)</option>
+                  <option value="Phrase">Cụm từ (Phrase)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Meaning -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-meaning">Nghĩa tiếng Việt *</label>
+              <input type="text" id="vocab-input-meaning" class="form-input" placeholder="Ví dụ: hoàn thành, đạt được" required />
+            </div>
+
+            <!-- Definition in English -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-definition">Định nghĩa tiếng Anh (Definition)</label>
+              <textarea id="vocab-input-definition" class="form-textarea" placeholder="To succeed in doing something, especially after a lot of effort."></textarea>
+            </div>
+
+            <!-- Example sentence English & Vietnamese -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-example-en">Ví dụ tiếng Anh (Example)</label>
+              <textarea id="vocab-input-example-en" class="form-textarea" style="height: 50px;" placeholder="I will accomplish this task by tomorrow."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-example-vi">Nghĩa của câu ví dụ</label>
+              <textarea id="vocab-input-example-vi" class="form-textarea" style="height: 50px;" placeholder="Tôi sẽ hoàn thành nhiệm vụ này vào ngày mai."></textarea>
+            </div>
+
+            <!-- Learning tip -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-tip">Mẹo ghi nhớ (Mnemonic / Tip)</label>
+              <input type="text" id="vocab-input-tip" class="form-input" placeholder="Ví dụ: âm gần giống 'accomplish' ~ 'đã cố hết sức'..." />
+            </div>
+
+            <input type="hidden" id="vocab-edit-id" value="" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-vocab">Hủy bỏ</button>
+            <button class="btn btn-primary" id="btn-save-vocab">Lưu từ vựng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast Notifications Container -->
+      <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    </div>
+
+    <!-- Main Module Script -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
