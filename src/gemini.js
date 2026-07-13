@@ -123,18 +123,27 @@ export async function testApiKey(key) {
 }
 
 /**
- * Translate and analyze a word (supports English or Vietnamese inputs)
+ * Translate and analyze a word (supports English or Vietnamese inputs, and adds Chinese translation)
  * @param {string} inputWord - The word/phrase to translate (English or Vietnamese)
  */
 export async function translateWord(inputWord) {
   const prompt = `Translate, analyze and define the word or phrase: "${inputWord}". Determine if it is English or Vietnamese, and return the structured JSON output.`;
   
-  const systemInstruction = `You are a helpful and expert English tutor for Vietnamese learners.
-Your task is to analyze the given word or phrase and output details including phonetic transcription (IPA), part of speech, Vietnamese translation, simple English definition, one natural English example sentence with its Vietnamese translation, and a mnemonic/tip in Vietnamese to help the user remember the word.
+  const systemInstruction = `You are a helpful and expert English and Chinese tutor for Vietnamese learners.
+Your task is to analyze the given word or phrase and output details including:
+1. Phonetic transcription (IPA)
+2. Part of speech
+3. Vietnamese translation
+4. Chinese translation (simplified characters + Pinyin in brackets, e.g. 韧性 (rènxìng))
+5. Simple English definition
+6. One natural English example sentence
+7. Translation of the example sentence in Vietnamese
+8. Translation of the example sentence in Chinese (simplified characters + Pinyin in brackets)
+9. A mnemonic/tip in Vietnamese to help the user remember the word (max 2 sentences)
 
 CRITICAL INSTRUCTION FOR INPUT LANGUAGE:
-1. If the input is an English word (e.g., "accomplish"), analyze that word directly. Output the word itself in the "word" field, its Vietnamese meaning in the "meaning" field, and provide other details.
-2. If the input is in Vietnamese (e.g., "hoàn thành" or "kiên cường"), you MUST translate it to the most appropriate, common, and useful English vocabulary word (e.g., "accomplish" or "resilient"). Output the translated English word in the "word" field, the user's original Vietnamese meaning (along with other common Vietnamese synonyms) in the "meaning" field, and provide all other fields (IPA, type, definition, examples, tip) based on the translated English word.`;
+1. If the input is an English word (e.g., "accomplish"), analyze that word directly. Output the word itself in the "word" field.
+2. If the input is in Vietnamese (e.g., "hoàn thành" or "kiên cường"), you MUST translate it to the most appropriate, common, and useful English vocabulary word (e.g., "accomplish" or "resilient"). Output the translated English word in the "word" field, the user's original Vietnamese meaning in the "meaning" field, and provide all other fields based on the translated English word.`;
 
   const jsonSchema = {
     type: 'OBJECT',
@@ -143,12 +152,62 @@ CRITICAL INSTRUCTION FOR INPUT LANGUAGE:
       ipa: { type: 'STRING', description: 'Phonetic symbol, e.g. /əˈkʌm.plɪʃ/ or /bʊk/' },
       type: { type: 'STRING', description: 'Part of speech, e.g. Verb, Noun, Adjective, Adverb' },
       meaning: { type: 'STRING', description: 'Short and clear translation/meanings in Vietnamese' },
+      meaningCn: { type: 'STRING', description: 'Short and clear translation/meanings in Chinese (Simplified characters and Pinyin in brackets, e.g. 获得 (huòdé))' },
       definition: { type: 'STRING', description: 'Simple definition in English' },
       exampleEn: { type: 'STRING', description: 'Example sentence in English using the word' },
       exampleVi: { type: 'STRING', description: 'Translation of the example sentence in Vietnamese' },
+      exampleCn: { type: 'STRING', description: 'Translation of the example sentence in Chinese (Simplified characters and Pinyin in brackets)' },
       tip: { type: 'STRING', description: 'A mnemonic, root word explanation, or a helpful tip in Vietnamese to remember this word (max 2 sentences)' }
     },
-    required: ['word', 'ipa', 'type', 'meaning', 'definition', 'exampleEn', 'exampleVi', 'tip']
+    required: ['word', 'ipa', 'type', 'meaning', 'meaningCn', 'definition', 'exampleEn', 'exampleVi', 'exampleCn', 'tip']
+  };
+
+  const responseText = await callGemini(prompt, systemInstruction, jsonSchema);
+  return JSON.parse(responseText);
+}
+
+/**
+ * Generate 5 vocabulary words related to a topic (supports Chinese and Vietnamese)
+ * @param {string} topic - The topic to generate words for (e.g. Travel, Business)
+ */
+export async function generateWordsByTopic(topic) {
+  const prompt = `Generate a list of 5 useful and common English vocabulary words or phrases related to the topic: "${topic}". Provide translations, definition, example sentence, and mnemonics.`;
+  
+  const systemInstruction = `You are a helpful and expert English and Chinese tutor.
+Your task is to generate 5 most common, useful, and practical English vocabulary words or phrases related to the user's requested topic.
+For each vocabulary item, you must provide:
+1. The English word itself
+2. IPA phonetic spelling
+3. Part of speech (type)
+4. Vietnamese meaning (translation)
+5. Chinese meaning (simplified characters + Pinyin in brackets, e.g. 餐厅 (cāntīng))
+6. English definition
+7. English example sentence
+8. Example sentence translation in Vietnamese
+9. Example sentence translation in Chinese (simplified characters + Pinyin in brackets)
+10. A helpful tip or mnemonic in Vietnamese to remember this word
+
+Return the output strictly as a JSON array of objects.`;
+
+  const jsonSchema = {
+    type: 'ARRAY',
+    description: 'List of vocabulary words related to the topic',
+    items: {
+      type: 'OBJECT',
+      properties: {
+        word: { type: 'STRING', description: 'The English word' },
+        ipa: { type: 'STRING', description: 'Phonetic symbol, e.g. /əˈkʌm.plɪʃ/' },
+        type: { type: 'STRING', description: 'Part of speech, e.g. Noun, Verb, Adjective, Adverb' },
+        meaning: { type: 'STRING', description: 'Translation/meanings in Vietnamese' },
+        meaningCn: { type: 'STRING', description: 'Translation/meanings in Chinese (Simplified characters and Pinyin in brackets)' },
+        definition: { type: 'STRING', description: 'Simple definition in English' },
+        exampleEn: { type: 'STRING', description: 'Example sentence in English using the word' },
+        exampleVi: { type: 'STRING', description: 'Translation of the example sentence in Vietnamese' },
+        exampleCn: { type: 'STRING', description: 'Translation of the example sentence in Chinese (Simplified characters and Pinyin in brackets)' },
+        tip: { type: 'STRING', description: 'A mnemonic, root word explanation, or a helpful tip in Vietnamese to remember this word (max 2 sentences)' }
+      },
+      required: ['word', 'ipa', 'type', 'meaning', 'meaningCn', 'definition', 'exampleEn', 'exampleVi', 'exampleCn', 'tip']
+    }
   };
 
   const responseText = await callGemini(prompt, systemInstruction, jsonSchema);
@@ -169,11 +228,11 @@ export async function chatWithTutor(message, history = []) {
   const model = getGeminiModel();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const systemInstruction = `You are "Aura", a warm, encouraging, and highly professional English Tutor.
-You assist Vietnamese learners in practicing their English.
+  const systemInstruction = `You are "Aura", a warm, encouraging, and highly professional English and Chinese Tutor.
+You assist Vietnamese learners in practicing their English and Chinese.
 Guidelines:
-1. Always respond in a mix of English and Vietnamese: write clear English paragraphs, and explain complex words or summarize key takeaways in Vietnamese.
-2. If the user makes grammatical, spelling, or usage mistakes in English, gently point them out and show how to say it more naturally under a small sections labeled "💡 Sửa lỗi (Corrections)" using markdown.
+1. Always respond in a mix of English, Chinese, and Vietnamese: write clear English and Chinese sentences, and explain complex words or summarize key takeaways in Vietnamese.
+2. If the user makes grammatical, spelling, or usage mistakes in English or Chinese, gently point them out and show how to say it more naturally under a small sections labeled "💡 Sửa lỗi (Corrections)" using markdown.
 3. Keep your replies concise, friendly, and conversational (100-200 words).
 4. Ask open-ended questions at the end to keep the conversation going.
 5. Use markdown for beautiful formatting.`;

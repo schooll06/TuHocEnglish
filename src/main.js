@@ -109,6 +109,7 @@ function handleNavigation() {
     '#vocabulary': 'vocabulary-view',
     '#flashcards': 'flashcards-view',
     '#chat': 'chat-view',
+    '#topics': 'topics-view',
     '#settings': 'settings-view'
   };
 
@@ -135,6 +136,9 @@ function handleNavigation() {
   }
   if (hash === '#chat') {
     initChatScroll();
+  }
+  if (hash === '#topics') {
+    initTopicsView();
   }
 
   // Close modals on nav
@@ -203,7 +207,10 @@ function renderVocabList() {
         </div>
       </div>
       
-      <div class="card-meaning">${w.meaning}</div>
+      <div class="card-meaning">
+        ${w.meaning}
+        ${w.meaningCn ? `<div class="card-meaning-cn" style="font-size: 14px; color: var(--color-secondary); margin-top: 4px;"><i class="fa-solid fa-language"></i> ${w.meaningCn}</div>` : ''}
+      </div>
       
       ${w.definition ? `<div class="card-definition">${w.definition}</div>` : ''}
       
@@ -211,6 +218,7 @@ function renderVocabList() {
         <div class="card-example">
           <span class="example-en">${w.exampleEn}</span>
           <span class="example-vi">${w.exampleVi || ''}</span>
+          ${w.exampleCn ? `<span class="example-cn" style="display: block; font-size: 13px; color: var(--color-secondary); margin-top: 2px;">${w.exampleCn}</span>` : ''}
         </div>
       ` : ''}
       
@@ -293,9 +301,11 @@ function openAddModal() {
   document.getElementById('vocab-input-ipa').value = '';
   document.getElementById('vocab-input-type').value = 'Noun';
   document.getElementById('vocab-input-meaning').value = '';
+  document.getElementById('vocab-input-meaning-cn').value = '';
   document.getElementById('vocab-input-definition').value = '';
   document.getElementById('vocab-input-example-en').value = '';
   document.getElementById('vocab-input-example-vi').value = '';
+  document.getElementById('vocab-input-example-cn').value = '';
   document.getElementById('vocab-input-tip').value = '';
   document.getElementById('vocab-modal').classList.add('active');
   document.getElementById('vocab-input-word').focus();
@@ -312,9 +322,11 @@ function openEditModal(id) {
   document.getElementById('vocab-input-ipa').value = wordObj.ipa || '';
   document.getElementById('vocab-input-type').value = wordObj.type || 'Noun';
   document.getElementById('vocab-input-meaning').value = wordObj.meaning || '';
+  document.getElementById('vocab-input-meaning-cn').value = wordObj.meaningCn || '';
   document.getElementById('vocab-input-definition').value = wordObj.definition || '';
   document.getElementById('vocab-input-example-en').value = wordObj.exampleEn || '';
   document.getElementById('vocab-input-example-vi').value = wordObj.exampleVi || '';
+  document.getElementById('vocab-input-example-cn').value = wordObj.exampleCn || '';
   document.getElementById('vocab-input-tip').value = wordObj.tip || '';
 
   document.getElementById('vocab-modal').classList.add('active');
@@ -354,9 +366,11 @@ async function handleAiTranslate() {
     document.getElementById('vocab-input-ipa').value = result.ipa || '';
     document.getElementById('vocab-input-type').value = result.type || 'Noun';
     document.getElementById('vocab-input-meaning').value = result.meaning || '';
+    document.getElementById('vocab-input-meaning-cn').value = result.meaningCn || '';
     document.getElementById('vocab-input-definition').value = result.definition || '';
     document.getElementById('vocab-input-example-en').value = result.exampleEn || '';
     document.getElementById('vocab-input-example-vi').value = result.exampleVi || '';
+    document.getElementById('vocab-input-example-cn').value = result.exampleCn || '';
     document.getElementById('vocab-input-tip').value = result.tip || '';
     
     showToast(`Gemini đã hoàn thành dịch từ "${word}"!`, 'success');
@@ -399,9 +413,11 @@ async function handleQuickAdd() {
       ipa: result.ipa || '',
       type: result.type || 'Noun',
       meaning: result.meaning || '',
+      meaningCn: result.meaningCn || '',
       definition: result.definition || '',
       exampleEn: result.exampleEn || '',
       exampleVi: result.exampleVi || '',
+      exampleCn: result.exampleCn || '',
       tip: result.tip || ''
     });
 
@@ -432,9 +448,11 @@ function saveVocabForm() {
   const ipa = document.getElementById('vocab-input-ipa').value.trim();
   const type = document.getElementById('vocab-input-type').value;
   const meaning = document.getElementById('vocab-input-meaning').value.trim();
+  const meaningCn = document.getElementById('vocab-input-meaning-cn').value.trim();
   const definition = document.getElementById('vocab-input-definition').value.trim();
   const exampleEn = document.getElementById('vocab-input-example-en').value.trim();
   const exampleVi = document.getElementById('vocab-input-example-vi').value.trim();
+  const exampleCn = document.getElementById('vocab-input-example-cn').value.trim();
   const tip = document.getElementById('vocab-input-tip').value.trim();
 
   if (!word || !meaning) {
@@ -442,7 +460,7 @@ function saveVocabForm() {
     return;
   }
 
-  const wordObj = { word, ipa, type, meaning, definition, exampleEn, exampleVi, tip };
+  const wordObj = { word, ipa, type, meaning, meaningCn, definition, exampleEn, exampleVi, exampleCn, tip };
 
   try {
     if (id) {
@@ -832,6 +850,158 @@ function handleResetDb() {
   }
 }
 
+// --- AI Topic Generator Logic ---
+let generatedTopicWords = [];
+
+function initTopicsView() {
+  document.getElementById('topic-input').value = '';
+  document.getElementById('topic-words-list').style.display = 'none';
+  document.getElementById('topic-loading').style.display = 'none';
+  document.getElementById('topic-input').focus();
+}
+
+async function handleGenerateTopicWords() {
+  const topicInput = document.getElementById('topic-input');
+  const topic = topicInput.value.trim();
+
+  if (!topic) {
+    showToast('Vui lòng nhập chủ đề học.', 'warning');
+    topicInput.focus();
+    return;
+  }
+
+  if (!isApiConfigured()) {
+    showToast('Chưa cấu hình Gemini API Key. Hãy cấu hình ở trang Cài đặt.', 'error');
+    return;
+  }
+
+  const loadingIndicator = document.getElementById('topic-loading');
+  const generateBtn = document.getElementById('btn-generate-topic');
+  const listContainer = document.getElementById('topic-words-list');
+
+  loadingIndicator.style.display = 'flex';
+  listContainer.style.display = 'none';
+  generateBtn.disabled = true;
+  topicInput.disabled = true;
+
+  try {
+    const results = await generateWordsByTopic(topic);
+    generatedTopicWords = results;
+    renderTopicWords();
+    showToast(`Đã tạo thành công 5 từ vựng cho chủ đề "${topic}"!`, 'success');
+  } catch (err) {
+    showToast(`Lỗi tạo từ vựng: ${err.message}`, 'error');
+    console.error(err);
+  } finally {
+    loadingIndicator.style.display = 'none';
+    generateBtn.disabled = false;
+    topicInput.disabled = false;
+  }
+}
+
+function renderTopicWords() {
+  const listContainer = document.getElementById('topic-words-list');
+  if (!listContainer) return;
+
+  listContainer.innerHTML = '';
+  listContainer.style.display = 'grid';
+
+  generatedTopicWords.forEach((w, index) => {
+    const card = document.createElement('div');
+    
+    // Check if word is already in notebook
+    const isSaved = currentWords.some(item => item.word.toLowerCase().trim() === w.word.toLowerCase().trim());
+    
+    card.className = `word-card ${isSaved ? 'card-mastered' : ''}`;
+    
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title-group">
+          <h3 class="card-word">${w.word}</h3>
+          <span class="card-ipa">${w.ipa || ''}</span>
+        </div>
+        <div class="card-badges">
+          <span class="badge badge-type">${w.type || 'Noun'}</span>
+          <span class="badge badge-status ${isSaved ? 'mastered' : 'learning'}" style="cursor: default;">
+            ${isSaved ? 'Đã lưu' : 'Gợi ý'}
+          </span>
+        </div>
+      </div>
+      
+      <div class="card-meaning">
+        <strong>Việt:</strong> ${w.meaning}
+        <div class="card-meaning-cn" style="font-size: 14px; color: var(--color-secondary); margin-top: 4px;">
+          <strong>Trung:</strong> ${w.meaningCn}
+        </div>
+      </div>
+      
+      ${w.definition ? `<div class="card-definition">${w.definition}</div>` : ''}
+      
+      ${w.exampleEn ? `
+        <div class="card-example">
+          <span class="example-en">${w.exampleEn}</span>
+          <span class="example-vi">${w.exampleVi || ''}</span>
+          <span class="example-cn" style="display: block; font-size: 13px; color: var(--color-secondary); margin-top: 2px;">${w.exampleCn}</span>
+        </div>
+      ` : ''}
+      
+      ${w.tip ? `
+        <div class="card-tip">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span>${w.tip}</span>
+        </div>
+      ` : ''}
+      
+      <div class="card-actions" style="margin-top: 15px;">
+        <button class="btn btn-primary btn-save-topic-word" data-index="${index}" ${isSaved ? 'disabled style="background: var(--color-border); border-color: var(--color-border);"' : ''} style="width: 100%; justify-content: center; height: 36px;">
+          <i class="fa-solid ${isSaved ? 'fa-circle-check' : 'fa-floppy-disk'}"></i> 
+          <span>${isSaved ? 'Đã lưu vào sổ tay' : 'Lưu vào sổ tay'}</span>
+        </button>
+      </div>
+    `;
+
+    // Save button event listener
+    if (!isSaved) {
+      card.querySelector('.btn-save-topic-word').addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        try {
+          const newWord = addWord({
+            word: w.word,
+            ipa: w.ipa || '',
+            type: w.type || 'Noun',
+            meaning: w.meaning || '',
+            meaningCn: w.meaningCn || '',
+            definition: w.definition || '',
+            exampleEn: w.exampleEn || '',
+            exampleVi: w.exampleVi || '',
+            exampleCn: w.exampleCn || '',
+            tip: w.tip || ''
+          });
+
+          // Sync in-memory list
+          currentWords.unshift(newWord);
+          updateStatsUI();
+          renderVocabList();
+          
+          // Update button UI
+          btn.disabled = true;
+          btn.style.background = 'var(--color-border)';
+          btn.style.borderColor = 'var(--color-border)';
+          btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Đã lưu vào sổ tay</span>';
+          card.querySelector('.badge-status').className = 'badge badge-status mastered';
+          card.querySelector('.badge-status').innerText = 'Đã lưu';
+          
+          showToast(`Đã lưu từ "${w.word}" vào sổ tay từ vựng!`, 'success');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      });
+    }
+
+    listContainer.appendChild(card);
+  });
+}
+
 // --- Event Binding ---
 function setupEventListeners() {
   // Navigation Routing
@@ -853,6 +1023,15 @@ function setupEventListeners() {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleQuickAdd();
+    }
+  });
+
+  // AI Topic Generator Events
+  document.getElementById('btn-generate-topic').addEventListener('click', handleGenerateTopicWords);
+  document.getElementById('topic-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleGenerateTopicWords();
     }
   });
 

@@ -40,6 +40,12 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="#topics" class="nav-link" id="tab-topics">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Chủ đề AI</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="#settings" class="nav-link" id="tab-settings">
               <i class="fa-solid fa-sliders"></i>
               <span>Cài đặt</span>
@@ -270,6 +276,41 @@
           </div>
         </section>
 
+        <!-- SECTION 5: TOPICS VIEW -->
+        <section id="topics-view" class="view-section" style="display: none;">
+          <header class="page-header">
+            <h1 class="page-title">Học Từ Vựng Theo Chủ Đề</h1>
+            <p class="page-subtitle">Nhập chủ đề bạn muốn học, AI Gemini sẽ gợi ý từ vựng song ngữ Anh - Trung - Việt liên quan</p>
+          </header>
+
+          <!-- Topic Input Bar -->
+          <div class="glass-panel" style="padding: 20px; margin-bottom: 25px; background: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.25);">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <label class="form-label" for="topic-input" style="font-weight: 600; color: var(--color-secondary);">Nhập chủ đề bạn muốn học (Ví dụ: Du lịch, Mua sắm, Gia đình, Công nghệ...):</label>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%;">
+                <input type="text" id="topic-input" class="form-input" style="flex: 1; min-width: 250px; height: 46px;" placeholder="Nhập chủ đề tiếng Việt hoặc tiếng Anh..." />
+                <button class="btn btn-primary" id="btn-generate-topic" style="height: 46px; padding: 0 24px;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo từ vựng bằng AI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div id="topic-loading" class="glass-panel" style="display: none; align-items: center; justify-content: center; gap: 15px; padding: 40px; text-align: center;">
+            <div class="spinner" style="width: 30px; height: 30px; border-top-color: var(--color-primary);"></div>
+            <div>
+              <h4 style="margin: 0; color: var(--color-primary);">Gemini AI đang biên soạn từ vựng...</h4>
+              <p style="margin: 5px 0 0 0; font-size: 13px; color: var(--color-muted);">Quá trình này có thể mất vài giây để dịch song ngữ Anh - Trung - Việt.</p>
+            </div>
+          </div>
+
+          <!-- Topic Words Grid -->
+          <div class="vocab-grid" id="topic-words-list" style="display: none;">
+            <!-- Dynamic generated cards will be inserted here -->
+          </div>
+        </section>
+
         <!-- SECTION 4: SETTINGS VIEW -->
         <section id="settings-view" class="view-section" style="display: none;">
           <header class="page-header">
@@ -423,6 +464,12 @@
               <input type="text" id="vocab-input-meaning" class="form-input" placeholder="Ví dụ: hoàn thành, đạt được" required />
             </div>
 
+            <!-- Meaning Chinese -->
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-meaning-cn">Nghĩa tiếng Trung (Chinese Translation)</label>
+              <input type="text" id="vocab-input-meaning-cn" class="form-input" placeholder="Ví dụ: 完成 (wánchéng)" />
+            </div>
+
             <!-- Definition in English -->
             <div class="form-group">
               <label class="form-label" for="vocab-input-definition">Định nghĩa tiếng Anh (Definition)</label>
@@ -435,8 +482,12 @@
               <textarea id="vocab-input-example-en" class="form-textarea" style="height: 50px;" placeholder="I will accomplish this task by tomorrow."></textarea>
             </div>
             <div class="form-group">
-              <label class="form-label" for="vocab-input-example-vi">Nghĩa của câu ví dụ</label>
+              <label class="form-label" for="vocab-input-example-vi">Nghĩa câu ví dụ (Tiếng Việt)</label>
               <textarea id="vocab-input-example-vi" class="form-textarea" style="height: 50px;" placeholder="Tôi sẽ hoàn thành nhiệm vụ này vào ngày mai."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="vocab-input-example-cn">Nghĩa câu ví dụ (Tiếng Trung)</label>
+              <textarea id="vocab-input-example-cn" class="form-textarea" style="height: 50px;" placeholder="Ví dụ: 我将在明天完成这项任务。(Wǒ jiāng zài míngtiān wánchéng zhè xiàng rènwu.)"></textarea>
             </div>
 
             <!-- Learning tip -->
