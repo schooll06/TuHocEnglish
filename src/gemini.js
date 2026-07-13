@@ -2,7 +2,7 @@
  * Gemini API Integration for VibeEnglish AI
  */
 
-const DEFAULT_MODEL = 'gemini-3.5-flash';
+const DEFAULT_MODEL = 'gemini-1.5-flash';
 const DEFAULT_KEY = '';
 
 /**
