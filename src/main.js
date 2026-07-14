@@ -595,7 +595,9 @@ function initChatScroll() {
 }
 
 function loadChatHistory() {
-  const history = localStorage.getItem('vibe_english_chat_history');
+  const user = getActiveUser();
+  const key = user ? `vibe_english_chat_history_${user}` : 'vibe_english_chat_history';
+  const history = localStorage.getItem(key);
   if (history) {
     try {
       chatHistory = JSON.parse(history);
@@ -604,11 +606,16 @@ function loadChatHistory() {
       console.error(e);
       chatHistory = [];
     }
+  } else {
+    chatHistory = [];
+    renderChatMessages();
   }
 }
 
 function saveChatHistory() {
-  localStorage.setItem('vibe_english_chat_history', JSON.stringify(chatHistory));
+  const user = getActiveUser();
+  const key = user ? `vibe_english_chat_history_${user}` : 'vibe_english_chat_history';
+  localStorage.setItem(key, JSON.stringify(chatHistory));
 }
 
 function renderChatMessages() {
@@ -1200,6 +1207,11 @@ function setupAuthListeners() {
   // Handle Logout
   const performLogout = () => {
     setActiveUser('');
+    currentWords = [];
+    chatHistory = [];
+    renderVocabList();
+    renderChatMessages();
+    updateStatsUI();
     showToast('Đã đăng xuất khỏi tài khoản.', 'info');
     checkAuth();
   };
