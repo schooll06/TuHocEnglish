@@ -1132,13 +1132,22 @@ function checkAuth() {
   const activeUser = getActiveUser();
   const authOverlay = document.getElementById('auth-overlay');
   
+  if (!authOverlay) return !!activeUser;
+
   if (!activeUser) {
     authOverlay.classList.add('active');
+    authOverlay.style.display = 'flex';
     return false;
   } else {
     authOverlay.classList.remove('active');
-    document.getElementById('user-profile-name').innerText = activeUser;
-    document.getElementById('settings-username-display').innerText = activeUser;
+    authOverlay.style.display = 'none';
+    
+    const profileNameEl = document.getElementById('user-profile-name');
+    if (profileNameEl) profileNameEl.innerText = activeUser;
+    
+    const settingsNameEl = document.getElementById('settings-username-display');
+    if (settingsNameEl) settingsNameEl.innerText = activeUser;
+    
     return true;
   }
 }
