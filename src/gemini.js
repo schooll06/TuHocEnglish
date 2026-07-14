@@ -9,28 +9,36 @@ const DEFAULT_KEY = '';
  * Get the API Key from localStorage or environment
  */
 export function getApiKey() {
-  return localStorage.getItem('vibe_english_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_KEY;
+  const user = localStorage.getItem('vibe_english_current_user') || '';
+  const keyName = user ? `vibe_english_gemini_key_${user}` : 'vibe_english_gemini_key';
+  return localStorage.getItem(keyName) || import.meta.env.VITE_GEMINI_API_KEY || DEFAULT_KEY;
 }
 
 /**
  * Save the API Key to localStorage
  */
 export function saveApiKey(key) {
-  localStorage.setItem('vibe_english_gemini_key', key.trim());
+  const user = localStorage.getItem('vibe_english_current_user') || '';
+  const keyName = user ? `vibe_english_gemini_key_${user}` : 'vibe_english_gemini_key';
+  localStorage.setItem(keyName, key.trim());
 }
 
 /**
  * Get the preferred Gemini model
  */
 export function getGeminiModel() {
-  return localStorage.getItem('vibe_english_gemini_model') || DEFAULT_MODEL;
+  const user = localStorage.getItem('vibe_english_current_user') || '';
+  const modelName = user ? `vibe_english_gemini_model_${user}` : 'vibe_english_gemini_model';
+  return localStorage.getItem(modelName) || DEFAULT_MODEL;
 }
 
 /**
  * Save the preferred Gemini model
  */
 export function saveGeminiModel(model) {
-  localStorage.setItem('vibe_english_gemini_model', model);
+  const user = localStorage.getItem('vibe_english_current_user') || '';
+  const modelName = user ? `vibe_english_gemini_model_${user}` : 'vibe_english_gemini_model';
+  localStorage.setItem(modelName, model);
 }
 
 /**

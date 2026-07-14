@@ -8,7 +8,11 @@ import {
   getStats, 
   importData, 
   exportData, 
-  loadMockDataIfEmpty 
+  loadMockDataIfEmpty,
+  getActiveUser,
+  setActiveUser,
+  registerUser,
+  loginUser
 } from './storage.js';
 import { 
   getApiKey, 
@@ -18,7 +22,8 @@ import {
   isApiConfigured, 
   testApiKey, 
   translateWord, 
-  chatWithTutor 
+  chatWithTutor,
+  generateWordsByTopic
 } from './gemini.js';
 
 // --- State Variables ---
@@ -842,7 +847,9 @@ function handleImportData(e) {
 
 function handleResetDb() {
   if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu hiện tại và khôi phục dữ liệu mẫu?')) {
-    localStorage.removeItem('vibe_english_vocab_list');
+    const user = getActiveUser();
+    const key = user ? `vibe_english_vocab_list_${user}` : 'vibe_english_vocab_list';
+    localStorage.removeItem(key);
     currentWords = loadMockDataIfEmpty();
     updateStatsUI();
     renderVocabList();
@@ -1113,29 +1120,128 @@ function setupEventListeners() {
   document.getElementById('btn-reset-db').addEventListener('click', handleResetDb);
 }
 
+// --- Authentication & Session Logic ---
+function checkAuth() {
+  const activeUser = getActiveUser();
+  const authOverlay = document.getElementById('auth-overlay');
+  
+  if (!activeUser) {
+    authOverlay.classList.add('active');
+    return false;
+  } else {
+    authOverlay.classList.remove('active');
+    document.getElementById('user-profile-name').innerText = activeUser;
+    document.getElementById('settings-username-display').innerText = activeUser;
+    return true;
+  }
+}
+
+function setupAuthListeners() {
+  // Toggle between Login and Register
+  document.getElementById('link-to-register').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'flex';
+  });
+
+  document.getElementById('link-to-login').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'flex';
+  });
+
+  // Handle Login Form Submission
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    try {
+      loginUser(username, password);
+      showToast(`Đăng nhập thành công! Chào mừng quay trở lại, ${username}!`, 'success');
+      
+      // Clear forms
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      
+      reloadUserSession();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+
+  // Handle Register Form Submission
+  document.getElementById('register-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('register-username').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
+    
+    if (password !== confirmPassword) {
+      showToast('Mật khẩu xác nhận không trùng khớp!', 'error');
+      return;
+    }
+    
+    try {
+      registerUser(username, password);
+      showToast(`Đăng ký tài khoản thành công! Chào mừng, ${username}!`, 'success');
+      
+      // Clear forms
+      document.getElementById('register-username').value = '';
+      document.getElementById('register-password').value = '';
+      document.getElementById('register-confirm-password').value = '';
+      
+      reloadUserSession();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+
+  // Handle Logout
+  const performLogout = () => {
+    setActiveUser('');
+    showToast('Đã đăng xuất khỏi tài khoản.', 'info');
+    checkAuth();
+  };
+
+  document.getElementById('btn-logout-sidebar').addEventListener('click', performLogout);
+  document.getElementById('btn-logout-settings').addEventListener('click', performLogout);
+}
+
+function setupTopicBadgesListeners() {
+  document.querySelectorAll('.btn-suggest-topic').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const topic = btn.getAttribute('data-topic');
+      const topicInput = document.getElementById('topic-input');
+      topicInput.value = topic;
+      handleGenerateTopicWords();
+    });
+  });
+}
+
+function reloadUserSession() {
+  if (checkAuth()) {
+    currentWords = loadMockDataIfEmpty();
+    initSettingsView();
+    loadChatHistory();
+    handleNavigation();
+    updateStatsUI();
+    renderVocabList();
+  }
+}
+
 // --- App Initialization ---
 function initApp() {
-  // Load mock data if list is empty
-  currentWords = loadMockDataIfEmpty();
-  
-  // Set up settings inputs values
-  initSettingsView();
-  
-  // Setup event listeners
   setupEventListeners();
+  setupAuthListeners();
+  setupTopicBadgesListeners();
 
-  // Load chat history
-  loadChatHistory();
-
-  // Initial routing
-  handleNavigation();
-
-  // Draw dashboard
-  updateStatsUI();
-  renderVocabList();
-
-  // Welcoming toast
-  showToast('Chào mừng bạn đến với VibeEnglish AI!', 'success');
+  if (getActiveUser()) {
+    reloadUserSession();
+    showToast(`Chào mừng bạn quay trở lại, ${getActiveUser()}!`, 'success');
+  } else {
+    checkAuth();
+  }
 }
 
 // Start everything when DOM is ready

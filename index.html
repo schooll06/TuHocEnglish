@@ -52,6 +52,18 @@
             </a>
           </li>
         </ul>
+        <!-- Sidebar profile bottom section -->
+        <div class="user-profile-bottom" id="user-profile-bottom">
+          <div class="user-profile-info">
+            <div class="user-profile-avatar">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <span class="user-profile-name" id="user-profile-name">Đang tải...</span>
+          </div>
+          <button class="btn-logout-sidebar" id="btn-logout-sidebar" title="Đăng xuất">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
       </nav>
 
       <!-- Main Content Container -->
@@ -285,8 +297,20 @@
 
           <!-- Topic Input Bar -->
           <div class="glass-panel" style="padding: 20px; margin-bottom: 25px; background: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.25);">
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              <label class="form-label" for="topic-input" style="font-weight: 600; color: var(--color-secondary);">Nhập chủ đề bạn muốn học (Ví dụ: Du lịch, Mua sắm, Gia đình, Công nghệ...):</label>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Suggested Topics Badges -->
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">Gợi ý chủ đề nhanh:</span>
+                <div class="suggested-topics" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="filter-tab btn-suggest-topic" data-topic="Du lịch & Khách sạn" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-plane"></i> Du lịch</button>
+                  <button class="filter-tab btn-suggest-topic" data-topic="Công nghệ & AI" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-laptop-code"></i> Công nghệ</button>
+                  <button class="filter-tab btn-suggest-topic" data-topic="Kinh doanh & Đàm phán" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-briefcase"></i> Kinh doanh</button>
+                  <button class="filter-tab btn-suggest-topic" data-topic="Ẩm thực & Mua sắm" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bag-shopping"></i> Mua sắm & Ẩm thực</button>
+                  <button class="filter-tab btn-suggest-topic" data-topic="Giao tiếp xã hội hàng ngày" style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-comments"></i> Giao tiếp</button>
+                </div>
+              </div>
+
+              <label class="form-label" for="topic-input" style="font-weight: 600; color: var(--color-secondary); margin-bottom: 0;">Nhập chủ đề tùy chọn của bạn:</label>
               <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%;">
                 <input type="text" id="topic-input" class="form-input" style="flex: 1; min-width: 250px; height: 46px;" placeholder="Nhập chủ đề tiếng Việt hoặc tiếng Anh..." />
                 <button class="btn btn-primary" id="btn-generate-topic" style="height: 46px; padding: 0 24px;">
@@ -320,6 +344,18 @@
 
           <div class="glass-panel">
             <div class="settings-section">
+              <!-- User Profile section for mobile/general -->
+              <div class="settings-row" style="background: rgba(139, 92, 246, 0.05); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between;">
+                <div class="settings-info">
+                  <h3 class="settings-title" style="margin: 0; font-size: 16px;"><i class="fa-solid fa-user-circle"></i> Tài khoản của bạn</h3>
+                  <p class="settings-desc" style="margin-top: 4px; margin-bottom: 0;">Đang đăng nhập với tên: <strong id="settings-username-display" style="color: var(--color-primary);">Guest</strong></p>
+                </div>
+                <div class="settings-control">
+                  <button class="btn btn-accent btn-sm" id="btn-logout-settings" style="height: 38px; padding: 0 16px; font-size: 13px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                  </button>
+                </div>
+              </div>
               
               <!-- Gemini API Key configuration -->
               <div class="settings-row">
@@ -504,6 +540,57 @@
             <button class="btn btn-secondary" id="btn-cancel-vocab">Hủy bỏ</button>
             <button class="btn btn-primary" id="btn-save-vocab">Lưu từ vựng</button>
           </div>
+        </div>
+      </div>
+
+      <!-- AUTHENTICATION OVERLAY (LOGIN/REGISTER) -->
+      <div id="auth-overlay" class="auth-overlay">
+        <div class="auth-box glass-panel">
+          <div class="auth-header">
+            <div class="auth-logo">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h1 class="auth-title">VibeEnglish AI</h1>
+            <p class="auth-subtitle">Trợ lý Học Tiếng Anh Thông Minh</p>
+          </div>
+          
+          <!-- Login Form -->
+          <form id="login-form" class="auth-form">
+            <h3 class="form-title">Đăng Nhập</h3>
+            <div class="form-group">
+              <label class="form-label" for="login-username">Tên tài khoản</label>
+              <input type="text" id="login-username" class="form-input" placeholder="Nhập tên tài khoản..." required />
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label class="form-label" for="login-password">Mật khẩu</label>
+              <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu..." required />
+            </div>
+            <button type="submit" class="btn btn-primary auth-submit-btn" style="margin-top: 16px;">
+              Đăng Nhập <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+            <p class="auth-switch-text">Chưa có tài khoản? <a href="#" id="link-to-register">Đăng ký ngay</a></p>
+          </form>
+          
+          <!-- Register Form (hidden by default) -->
+          <form id="register-form" class="auth-form" style="display: none;">
+            <h3 class="form-title">Đăng Ký Tài Khoản</h3>
+            <div class="form-group">
+              <label class="form-label" for="register-username">Tên tài khoản mới</label>
+              <input type="text" id="register-username" class="form-input" placeholder="Nhập tên tài khoản..." required />
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label class="form-label" for="register-password">Mật khẩu</label>
+              <input type="password" id="register-password" class="form-input" placeholder="Tạo mật khẩu..." required />
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label class="form-label" for="register-confirm-password">Xác nhận mật khẩu</label>
+              <input type="password" id="register-confirm-password" class="form-input" placeholder="Nhập lại mật khẩu..." required />
+            </div>
+            <button type="submit" class="btn btn-primary auth-submit-btn" style="margin-top: 16px;">
+              Đăng Ký Tài Khoản <i class="fa-solid fa-user-plus"></i>
+            </button>
+            <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="link-to-login">Đăng nhập</a></p>
+          </form>
         </div>
       </div>
 

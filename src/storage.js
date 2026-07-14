@@ -2,13 +2,54 @@
  * LocalStorage Management for VibeEnglish AI
  */
 
-const STORAGE_KEY = 'vibe_english_vocab_list';
+export function getActiveUser() {
+  return localStorage.getItem('vibe_english_current_user') || '';
+}
+
+export function setActiveUser(username) {
+  if (username) {
+    localStorage.setItem('vibe_english_current_user', username);
+  } else {
+    localStorage.removeItem('vibe_english_current_user');
+  }
+}
+
+export function getUsers() {
+  const data = localStorage.getItem('vibe_english_users');
+  return data ? JSON.parse(data) : [];
+}
+
+export function registerUser(username, password) {
+  const users = getUsers();
+  const exists = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (exists) {
+    throw new Error('Tài khoản này đã tồn tại!');
+  }
+  users.push({ username, password });
+  localStorage.setItem('vibe_english_users', JSON.stringify(users));
+  setActiveUser(username);
+}
+
+export function loginUser(username, password) {
+  const users = getUsers();
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (!user || user.password !== password) {
+    throw new Error('Tên tài khoản hoặc mật khẩu không chính xác!');
+  }
+  setActiveUser(username);
+}
+
+function getStorageKey() {
+  const user = getActiveUser();
+  return user ? `vibe_english_vocab_list_${user}` : 'vibe_english_vocab_list';
+}
 
 /**
  * Get all words, sorted by creation date descending
  */
 export function getWords() {
-  const data = localStorage.getItem(STORAGE_KEY);
+  const key = getStorageKey();
+  const data = localStorage.getItem(key);
   if (!data) return [];
   try {
     const list = JSON.parse(data);
@@ -23,7 +64,8 @@ export function getWords() {
  * Save all words
  */
 export function saveWords(words) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+  const key = getStorageKey();
+  localStorage.setItem(key, JSON.stringify(words));
 }
 
 /**
